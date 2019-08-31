@@ -12,27 +12,26 @@ void setup() {
   Serial.begin(9600);
 }
 
+int IDLE_MS = 100;
+
+void shiftOut(byte value) {
+  int i=0;
+  int pinState;
+  digitalWrite(SER_PIN, LOW);
+  digitalWrite(RCLK_PIN, LOW);
+  for (i=7; i>=0; i--) {
+    digitalWrite(SRCLK_PIN, LOW);
+    digitalWrite(SER_PIN, value & (HIGH<<i));
+    digitalWrite(SRCLK_PIN, HIGH);
+    digitalWrite(SER_PIN, LOW); //ground data pin after shift to prevent bleed through
+  }
+  digitalWrite(RCLK_PIN, HIGH);
+}
+
 void loop() {
     Serial.println("=== LOOP");
-    const int idle_ms=100;
-    digitalWrite(LED_BUILTIN, LOW);
-    delay(idle_ms * 4);
-    digitalWrite(RCLK_PIN, LOW);
-    Serial.println("RCLK_PIN: 0");
-    byte v = 0;
-    for (int i=0; i<8; i++) {
-      digitalWrite(SRCLK_PIN, LOW);
-      Serial.println("SRCLK_PIN: 0");
-      digitalWrite(SER_PIN, i % 2);
-      Serial.print("SER_PIN: ");
-      Serial.println(i%2);      
-      delay(idle_ms * 2);
-      digitalWrite(SRCLK_PIN, HIGH);
-      Serial.println("SRCLK_PIN: 1");
-      delay(idle_ms);
+    for (int i=0; i < 1000; i++) {
+      shiftOut(i % 256);
+      delay(40);
     }
-    digitalWrite(LED_BUILTIN, HIGH);
-    delay(idle_ms * 4);
-    digitalWrite(RCLK_PIN, HIGH);
-    Serial.println("RCLK_PIN: 1");
 }
