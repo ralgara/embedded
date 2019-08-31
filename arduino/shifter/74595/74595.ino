@@ -23,15 +23,18 @@ void shiftOut(byte value) {
     digitalWrite(SRCLK_PIN, LOW);
     digitalWrite(SER_PIN, value & (HIGH<<i));
     digitalWrite(SRCLK_PIN, HIGH);
-    digitalWrite(SER_PIN, LOW); //ground data pin after shift to prevent bleed through
+    digitalWrite(SER_PIN, LOW); //ground data pin after shift to prevent bleed-through
   }
   digitalWrite(RCLK_PIN, HIGH);
 }
 
 void loop() {
-    Serial.println("=== LOOP");
+    byte v = 0;
     for (int i=0; i < 1000; i++) {
-      shiftOut(i % 256);
-      delay(40);
+      v += pow(-1, i / 7);
+      shiftOut(1 << v);
+      Serial.print(i); Serial.print(" "); Serial.println(v);
+      //(-1) ** (s // 8)
+      delay(60);
     }
 }
