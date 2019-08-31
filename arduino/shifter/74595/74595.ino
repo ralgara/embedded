@@ -28,13 +28,26 @@ void shiftOut(byte value) {
   digitalWrite(RCLK_PIN, HIGH);
 }
 
+const int BITS = 8;
+const int N = 1;
+const byte PERIODS[N] = {18};
+byte c[N];
+int t = 0;
 void loop() {
-    byte v = 0;
-    for (int i=0; i < 1000; i++) {
-      v += pow(-1, i / 7);
-      shiftOut(1 << v);
-      Serial.print(i); Serial.print(" "); Serial.println(v);
-      //(-1) ** (s // 8)
-      delay(60);
-    }
+      byte out = 0;
+      //iterate objects and evolve position
+      for (int i=0; i < N; i++) { // output bits
+          int p = pow(-1, t / PERIODS[i]);
+          c[i] += p;
+          out += 1 << c[i];
+          Serial.print(t);Serial.print(" ");Serial.print(i);Serial.print(" ");
+          Serial.print(p);Serial.print(" ");Serial.print(c[i]);Serial.print(" ");
+          Serial.print(out);Serial.print(" ");
+          Serial.println();
+      }
+      shiftOut(out);
+      Serial.print("---");Serial.print(out);Serial.print(" ");Serial.print(out);
+      Serial.println();
+      t += 1;
+      delay(200);
 }
