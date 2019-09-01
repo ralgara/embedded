@@ -29,20 +29,20 @@ void shiftOut(byte value) {
 }
 
 const int BITS = 8;
-const int N = 1;
-const byte PERIODS[N] = {18};
-byte c[N];
+const int N = 3;
+const byte PERIODS[N] = {2,3,4};
+
 int t = 0;
 void loop() {
-      byte out = 0;
       //iterate objects and evolve position
+      byte out = 0;
       for (int i=0; i < N; i++) { // output bits
-          int p = pow(-1, t / PERIODS[i]);
-          c[i] += p;
-          out += 1 << c[i];
-          Serial.print(t);Serial.print(" ");Serial.print(i);Serial.print(" ");
-          Serial.print(p);Serial.print(" ");Serial.print(c[i]);Serial.print(" ");
-          Serial.print(out);Serial.print(" ");
+          float s = (BITS/2) * (1 + sin(float(t) / PERIODS[i])); //
+          byte ss = 1 << int(s);
+          out |= ss;
+          Serial.print("t=");Serial.print(t);Serial.print(",i= ");Serial.print(i);
+          Serial.print(",s=");Serial.print(s);Serial.print(",ss=");Serial.print(ss);
+          Serial.print(",out=");Serial.print(out);
           Serial.println();
       }
       shiftOut(out);
