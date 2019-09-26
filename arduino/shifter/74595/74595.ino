@@ -1,67 +1,74 @@
+#include "DHT.h"
 
-int RCLK_PIN = 8;
-int SRCLK_PIN = 9;
-int SER_PIN = 10;
-int OE_PIN = 13;
+#define SER_PIN 7
+#define _OE_PIN 6
+#define RCLK_PIN 5
+#define SRCLK_PIN 4
+#define _SRCLR_PIN 3
+
+#define DHTPIN 2
+#define DHTTYPE DHT11
+
+DHT dht(DHTPIN, DHTTYPE);
 
 void setup() {
-  //set pins to output because they are addressed in the main loop
+  // First 74595 serial register, others daisy-chained
+  pinMode(SER_PIN, OUTPUT);
+  pinMode(_OE_PIN, OUTPUT);
   pinMode(RCLK_PIN, OUTPUT);
   pinMode(SRCLK_PIN, OUTPUT);
-  pinMode(SER_PIN, OUTPUT);
-  pinMode(OE_PIN, OUTPUT);
-  digitalWrite(OE_PIN, HIGH);
+  pinMode(_SRCLR_PIN, OUTPUT);
+  
   pinMode(LED_BUILTIN, OUTPUT);
   Serial.begin(9600);
+  Serial.println("DHTxx test!");
+  dht.begin();
+}
+
+char sbuf[255];
+byte v[4];
+void loop() {
+  digitalWrite(_OE_PIN, LOW);
+  digitalWrite(_SRCLR_PIN, HIGH);
+  for (int i=0; i<4; i++) {
+
+    // Read DHT11
+    // Reading time: ~250ms
+    // Reading latency/age: 2s
+    float h = dht.readHumidity();
+    float t = dht.readTemperature();
+    Serial.println(h);
+    Serial.println(t);
+    sprintf(sbuf, "temp: %f, hum: %f\n", h, t);
+    //Serial.print(sbuf);
+
+    
+    if (i % 10 == 0) v[i] = random(255);
+    if (i % 10 == 5) v[i] = random(255);
+    if (i % 10 < 3) v[i]  = random(255);
+    if (i % 10 > 7) v[i]  = random(255);
+    shiftOut(v[i]);
+  }
 }
 
 void shiftOut(byte value) {
-  int i=0;
+  const int DELAY=3 ;
+  int i = 0;
   int pinState;
+  // Ground state for display matrix
   digitalWrite(SER_PIN, LOW);
   digitalWrite(RCLK_PIN, LOW);
-  for (i=7; i>=0; i--) {
+  //Serial.print("v: "); Serial.println(value, HEX);
+  for (i = 8; i >= 0; i--) {
     digitalWrite(SRCLK_PIN, LOW);
-    digitalWrite(SER_PIN, value & (HIGH<<i));
+    delay(DELAY);
+    boolean bitValue = value & (HIGH << i);
+    digitalWrite(SER_PIN, bitValue);
+    delay(DELAY);
     digitalWrite(SRCLK_PIN, HIGH);
+    delay(DELAY);
     digitalWrite(SER_PIN, LOW); //ground data pin after shift to prevent bleed-through
   }
+  delay(DELAY);
   digitalWrite(RCLK_PIN, HIGH);
-}
-
-const int BITS = 8;
-const int N = 3;
-const byte PERIODS[N] = {1,3,4};
-
-int t = 0;  // Object clock: argument to oscillators
-int tz = 0; // Hardware clock: CPU loop counter, basis for PCM intensity control via register OE
-const int R = 2000;  // Object ratio = CPU loops between register updates
-const float Z = 100; // Inverse duty cycle
-boolean oe = LOW;
-boolean oep = HIGH;
-void loop() {
-  if (oep != oe) {
-    oe = oep;
-    digitalWrite(OE_PIN, oe);
-    //Serial.print("\noep=");Serial.print(oep);Serial.print("\n");    
-  }
-  oep = sin(tz/Z) > 0;
-  
-  //iterate objects and evolve position
-  if (tz % R == 0) {
-    byte out = 0;
-    for (int i=0; i < N; i++) { // output bits
-      float s = (BITS/2) * (1 + sin(float(t) / PERIODS[i])); //
-      byte ss = 1 << int(s);
-      out |= ss;
-    }
-    shiftOut(out);
-//    Serial.print("tz=");Serial.print(tz);
-//    Serial.print(",t=");Serial.print(t);
-//    Serial.print(",oe=");Serial.print(oe);
-//    Serial.print(",oep=");Serial.print(oep);
-//    Serial.println();
-    t++;
-  }
-  tz++;
 }
